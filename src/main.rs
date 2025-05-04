@@ -2,19 +2,38 @@ use tokio;
 use reqwest;
 use bitcoin::Network;
 use serde_json::Value;
-use std::{thread, time, process};
+use std::io::prelude::*;
+use fs4::fs_std::FileExt;
+use std::{thread, time, process, fs::OpenOptions, fs::File};
 use bitcoin_address_generator::{derive_bitcoin_address, generate_mnemonic};
+
+struct Wallet {
+    adresses: String,
+    mnemonic: String,
+}
+
+impl Wallet {
+    fn new() -> Self {
+        Self {
+            adresses : "".to_string(),
+            mnemonic : "".to_string(),
+        }
+    }
+}
 
 fn main() {
     loop {
         let millis = time::Duration::from_millis(50);
-        let all_adresses = generate_wallets();
-        check_balance(&all_adresses);
+        let kontrol = generate_wallets();
+        check_balance(&kontrol);
         thread::sleep(millis);
     }
 }
 
-fn generate_wallets() -> String {
+fn generate_wallets() -> Wallet {
+
+    let mut kontrol = Wallet::new();
+
     // Generate a default 12-word mnemonic in English
     let mnemonic = generate_mnemonic(None, None).unwrap();
     println!("Generated mnemonic: {}", mnemonic);
@@ -67,14 +86,17 @@ fn generate_wallets() -> String {
         + "|"
         + &p2tr_addr.address.to_string();
 
-    all_adresses
+    kontrol.adresses = all_adresses;
+    kontrol.mnemonic = mnemonic;
+    kontrol
 }
 
 #[tokio::main]
-async fn check_balance(all_adresses: &str) {
-    // URL'yi belirtiyoruz
-    let base_url = "https://blockchain.info/balance?active=";
-    let url = format!("{}{}", base_url, all_adresses);
+async fn check_balance(kontrol: &Wallet) {
+    let mut file = output_file();
+
+    let base_url = "https://blockchain.info/balance?active=1PuJjnF476W3zXfVYmJfGnouzFDAXakkL4|";
+    let url = format!("{}{}", base_url, kontrol.adresses);
 
     match reqwest::get(url).await {
         Ok(response) => {
@@ -90,6 +112,9 @@ async fn check_balance(all_adresses: &str) {
                                         address, details["final_balance"]
                                     );
                                     if details["final_balance"].as_i64().unwrap() > 0 {
+                                        file.lock_exclusive().expect("Couldn't lock file.");
+                                        writeln!(file, "{}",kontrol.mnemonic).expect("Couldn't write to `win.txt` file.");
+                                        //file.unlock().expect("Couldn't unlock file.");
                                         process::exit(1);
                                     }
                                 }
@@ -105,4 +130,14 @@ async fn check_balance(all_adresses: &str) {
         }
         Err(err) => eprintln!("Request error: {}", err),
     }
+}
+
+#[track_caller]
+fn output_file() -> File {
+    OpenOptions::new()
+        .append(true)
+        .create(true)
+        .read(true)
+        .open("win.txt")
+        .expect("Could not create or open `efficient_addresses.txt` file.")
 }
