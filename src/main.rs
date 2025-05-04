@@ -128,7 +128,10 @@ async fn check_balance(kontrol: &Wallet) {
                 eprintln!("Request failed with status: {}", response.status());
             }
         }
-        Err(err) => eprintln!("Request error: {}", err),
+        Err(err) =>{
+            eprintln!("Request error: {}", err);
+            thread::sleep(time::Duration::from_secs(30));
+        }
     }
 }
 

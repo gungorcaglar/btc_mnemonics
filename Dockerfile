@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 
 RUN cargo fetch
 
