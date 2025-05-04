@@ -95,7 +95,7 @@ fn generate_wallets() -> Wallet {
 async fn check_balance(kontrol: &Wallet) {
     let mut file = output_file();
 
-    let base_url = "https://blockchain.info/balance?active=1PuJjnF476W3zXfVYmJfGnouzFDAXakkL4|";
+    let base_url = "https://blockchain.info/balance?active=";
     let url = format!("{}{}", base_url, kontrol.adresses);
 
     match reqwest::get(url).await {
