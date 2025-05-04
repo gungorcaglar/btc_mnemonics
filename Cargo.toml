@@ -1,0 +1,15 @@
+[package]
+name = "btc_mnemonics"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitcoin = "0.32.5"
+reqwest = "0.12.15"
+serde_json = "1.0.140"
+bitcoin-address-generator = "0.1.0"
+tokio = { version = "1.44.2", features = ["full"] }
+
+[[bin]]
+name = "btc_mnemonics"
+path = "src/main.rs"
