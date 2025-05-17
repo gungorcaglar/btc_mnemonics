@@ -35,7 +35,7 @@ fn main() {
         }
         check_balance(kontrol);
         let elapsed = now.elapsed();
-        println!("Elapsed: {:.2?}", elapsed);
+        println!("50 Wallet Elapsed: {:.2?}", elapsed);
     }
 }
 
