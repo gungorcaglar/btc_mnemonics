@@ -1,12 +1,14 @@
-use tokio;
-use reqwest;
 use bitcoin::Network;
+use bitcoin_address_generator::{derive_bitcoin_address, generate_mnemonic};
+use fs4::fs_std::FileExt;
+use reqwest;
 use serde_json::Value;
 use std::io::prelude::*;
-use fs4::fs_std::FileExt;
-use std::{thread, time, process, fs::OpenOptions, fs::File};
-use bitcoin_address_generator::{derive_bitcoin_address, generate_mnemonic};
+use std::{fs::File, fs::OpenOptions, process, thread, time};
+use std::time::Instant;
+use tokio;
 
+#[derive(Debug)]
 struct Wallet {
     adresses: String,
     mnemonic: String,
@@ -15,28 +17,34 @@ struct Wallet {
 impl Wallet {
     fn new() -> Self {
         Self {
-            adresses : "".to_string(),
-            mnemonic : "".to_string(),
+            adresses: "".to_string(),
+            mnemonic: "".to_string(),
         }
     }
 }
 
 fn main() {
     loop {
-        let millis = time::Duration::from_millis(50);
-        let kontrol = generate_wallets();
-        check_balance(&kontrol);
-        thread::sleep(millis);
+        let now = Instant::now();
+        let mut n = 0;
+        let mut kontrol: Vec<Wallet> = Vec::new();
+        while n < 50 {
+            let wallet = generate_wallets();
+            kontrol.push(wallet);
+            n += 1;
+        }
+        check_balance(kontrol);
+        let elapsed = now.elapsed();
+        println!("Elapsed: {:.2?}", elapsed);
     }
 }
 
 fn generate_wallets() -> Wallet {
-
     let mut kontrol = Wallet::new();
 
     // Generate a default 12-word mnemonic in English
     let mnemonic = generate_mnemonic(None, None).unwrap();
-    println!("Generated mnemonic: {}", mnemonic);
+    //println!("Generated mnemonic: {}", mnemonic);
 
     // Derive a Legacy (P2PKH) address
     let p2pkh_addr = derive_bitcoin_address(
@@ -84,7 +92,8 @@ fn generate_wallets() -> Wallet {
         + "|"
         + &p2wpkh_addr.address.to_string()
         + "|"
-        + &p2tr_addr.address.to_string();
+        + &p2tr_addr.address.to_string()
+        + "|";
 
     kontrol.adresses = all_adresses;
     kontrol.mnemonic = mnemonic;
@@ -92,43 +101,52 @@ fn generate_wallets() -> Wallet {
 }
 
 #[tokio::main]
-async fn check_balance(kontrol: &Wallet) {
+async fn check_balance(kontrol: Vec<Wallet>) {
     let mut file = output_file();
 
     let base_url = "https://blockchain.info/balance?active=";
-    let url = format!("{}{}", base_url, kontrol.adresses);
+    let mut n = 0;
+    let mut query: String = "".to_string();
+    while n < kontrol.len() {
+        query += &kontrol[n].adresses;
+        n += 1;
+    }
+
+    let url = format!("{}{}", base_url, query);
 
     match reqwest::get(url).await {
         Ok(response) => {
             if response.status().is_success() {
                 // Yanıt gövdesini alıyoruz
                 match response.text().await {
-                    Ok(body) => {
-                        match serde_json::from_str::<Value>(&body) {
-                            Ok(json) => {
-                                for (address, details) in json.as_object().unwrap() {
-                                    println!(
-                                        "Address: {}, Final Balance: {}",
-                                        address, details["final_balance"]
-                                    );
-                                    if details["final_balance"].as_i64().unwrap() > 0 {
-                                        file.lock_exclusive().expect("Couldn't lock file.");
-                                        writeln!(file, "{}",kontrol.mnemonic).expect("Couldn't write to `win.txt` file.");
-                                        //file.unlock().expect("Couldn't unlock file.");
-                                        process::exit(1);
+                    Ok(body) => match serde_json::from_str::<Value>(&body) {
+                        Ok(json) => {
+                            for (address, details) in json.as_object().unwrap() {
+                                println!(
+                                    "Address: {}, Final Balance: {}",
+                                    address, details["final_balance"]
+                                );
+                                if details["final_balance"].as_i64().unwrap() > 0 {
+                                    let mut m = 0;
+                                    file.lock_exclusive().expect("Couldn't lock file.");
+                                    while m < kontrol.len() {
+                                        writeln!(file, "{}", kontrol[m].mnemonic)
+                                            .expect("Couldn't write to `win.txt` file.");
+                                        m += 1;
                                     }
+                                    process::exit(1);
                                 }
                             }
-                            Err(err) => eprintln!("Error parsing JSON: {}", err),
                         }
-                    }
+                        Err(err) => eprintln!("Error parsing JSON: {}", err),
+                    },
                     Err(err) => eprintln!("Error reading response body: {}", err),
                 }
             } else {
                 eprintln!("Request failed with status: {}", response.status());
             }
         }
-        Err(err) =>{
+        Err(err) => {
             eprintln!("Request error: {}", err);
             thread::sleep(time::Duration::from_secs(30));
         }
