@@ -25,7 +25,7 @@ impl Wallet {
 
 fn main() {
     loop {
-        print!("\x1Bc");
+        print!("\x1Bc");//FOR CLEANING COMMAND SCREEN CLS OR CLEAR
         let now = Instant::now();
         let mut n = 0;
         let mut kontrol: Vec<Wallet> = Vec::new();
