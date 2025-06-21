@@ -101,6 +101,7 @@ fn generate_wallets() -> Wallet {
     kontrol
 }
 
+#[allow(unused_variables)]
 #[tokio::main]
 async fn check_balance(kontrol: Vec<Wallet>) {
     let mut file = output_file();
@@ -123,10 +124,10 @@ async fn check_balance(kontrol: Vec<Wallet>) {
                     Ok(body) => match serde_json::from_str::<Value>(&body) {
                         Ok(json) => {
                             for (address, details) in json.as_object().unwrap() {
-                                println!(
+                                /*println!(
                                     "Address: {}, Final Balance: {}",
                                     address, details["final_balance"]
-                                );
+                                );*/
                                 if details["final_balance"].as_i64().unwrap() > 0 {
                                     let mut m = 0;
                                     file.lock_exclusive().expect("Couldn't lock file.");
