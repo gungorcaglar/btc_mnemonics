@@ -1,12 +1,11 @@
-use bitcoin::Network;
-use bitcoin_address_generator::{derive_bitcoin_address, generate_mnemonic};
-use fs4::fs_std::FileExt;
+use tokio;
 use reqwest;
+use bitcoin::Network;
 use serde_json::Value;
 use std::io::prelude::*;
+use fs4::fs_std::FileExt;
 use std::{fs::File, fs::OpenOptions, process, thread, time};
-use std::time::Instant;
-use tokio;
+use bitcoin_address_generator::{derive_bitcoin_address, generate_mnemonic};
 
 #[derive(Debug)]
 struct Wallet {
@@ -24,9 +23,9 @@ impl Wallet {
 }
 
 fn main() {
+    println!("{} - Basladi", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
     loop {
         print!("\x1Bc");//FOR CLEANING COMMAND SCREEN CLS OR CLEAR
-        let now = Instant::now();
         let mut n = 0;
         let mut kontrol: Vec<Wallet> = Vec::new();
         while n < 50 {
@@ -35,8 +34,6 @@ fn main() {
             n += 1;
         }
         check_balance(kontrol);
-        let elapsed = now.elapsed();
-        println!("50 Wallet Elapsed: {:.2?}", elapsed);
     }
 }
 
