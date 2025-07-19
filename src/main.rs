@@ -22,10 +22,11 @@ impl Wallet {
     }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("{} - Basladi", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
     loop {
-        print!("\x1Bc");//FOR CLEANING COMMAND SCREEN CLS OR CLEAR
+        //print!("\x1Bc");//FOR CLEANING COMMAND SCREEN CLS OR CLEAR
         let mut n = 0;
         let mut kontrol: Vec<Wallet> = Vec::new();
         while n < 50 {
@@ -33,7 +34,8 @@ fn main() {
             kontrol.push(wallet);
             n += 1;
         }
-        check_balance(kontrol);
+        check_balance(kontrol).await;
+        thread::sleep(time::Duration::from_millis(10));
     }
 }
 
@@ -88,7 +90,6 @@ fn generate_wallets() -> Wallet {
 }
 
 #[allow(unused_variables)]
-#[tokio::main]
 async fn check_balance(kontrol: Vec<Wallet>) {
     let mut file = output_file();
 
@@ -107,7 +108,8 @@ async fn check_balance(kontrol: Vec<Wallet>) {
             if response.status().is_success() {
                 match response.text().await {
                     Ok(body) => match serde_json::from_str::<Value>(&body) {
-                        Ok(json) => {
+                        Ok(json) =>
+                        {
                             for (address, details) in json.as_object().unwrap() {
                                 if details["final_balance"].as_i64().unwrap() > 0 {
                                     let mut m = 0;
@@ -120,6 +122,7 @@ async fn check_balance(kontrol: Vec<Wallet>) {
                                     process::exit(1);
                                 }
                             }
+                            println!("{} - Cevap geldi, kontrol bitti", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
                         }
                         Err(err) => eprintln!("Error parsing JSON: {}", err),
                     },

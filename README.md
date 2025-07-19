@@ -5,19 +5,19 @@ Randomly generate BIP39 words and ONLINE check BTC wallets with Blockchain.com -
 
 ### Build the Docker image:
 ```bash
-docker build -t mnemonic .
+sudo docker build -t mnemonic .
  ```
 ### Run the Docker container:
 ```bash
-docker run -d -it -p 8000:8000 --name mnemonic-container mnemonic
+sudo docker run -d -it -p 8000:8000 --name mnemonic-container mnemonic
 ```
 ### Check Logs:
 ```bash
-docker logs --follow mnemonic-container
+sudo docker logs --follow mnemonic-container
 ```
 ### Check Bash:
 ```bash
-docker exec -it mnemonic-container bash
+sudo docker exec -it mnemonic-container bash
 ```
 
 
